@@ -1,0 +1,882 @@
+#include <iostream>
+#include <sqlite3.h>
+#include<string>
+#include <fstream>
+#include<map>
+#include<windows.h>
+
+using namespace std;
+
+sqlite3* db; //
+char* messaggeError; //captures any error raised by the sqlite3_exec statement
+int v = 0;
+
+
+class person;
+map<int, person>mydata;	//create a map for  det
+int pass = 2222;
+int mainadm = 1000;
+int pass1;
+int mainadm1;
+
+class product {
+public:
+	int prodno, quantity, bought_quantity,new_quantity;
+	float price, discount;
+	string prodname;
+	float discounted_price, total_price, total = 0;
+	char choice = 'Y';
+	static int callback(void* data, int argc, char** argv, char** azColName) 
+		/* 
+		void* data provided in the 4th argument of sqlite3_exec()
+		int argc represents the number of columns in a row
+		char** argv reprents an array of strings representing fields in a row
+		char** argv reprents an array of strings representing fields in a column
+		*/
+	{
+		int i;
+		cout << "---------------------\n";
+		for (i = 0; i < argc; i++)
+		{
+
+			printf("| %s | %s |\n", azColName[i], argv[i] ? argv[i] : "NULL");
+
+		}
+		cout << "---------------------\n";
+		printf("\n");
+		return 0;
+	}
+
+	int create_database();
+	int create_table1();
+	int create_table2();
+	int data1();
+	int insert_into_table1();
+	int insert_into_table2();
+	int delete_from_table1();
+	int modify_quantity();
+	int delete_table2();
+	int modify_update_table();
+	int place_order();
+	void intro();
+	int admin_menu_stocks();
+	void title_header();
+	void footer();
+};
+/*
+	FUNCTION TO DISPLAY THE SUPERMARKET DETAILS
+*/
+
+void product::title_header()
+{	system("color 0a");
+	cout << "\n\t==========================================\n";
+	cout << "\n\n\tMEGAMATT SUPERMAKET";
+	cout << "\n\tP.O. BOX 69-010102 RUARAKA";
+	cout << "\n\tPIN NO P0157980986";
+	cout << "\n\t==========================================\n";
+}
+/*
+	FUNCTION TO DISPLAY FOOTER
+*/
+
+void product::footer()
+{
+	cout << "\n\n\t==========================================\n";
+	cout << "\n\n\tMEGAMATT SUPERMAKET";
+	cout << "\n\tThank you for shopping with us. We hope you'll come back soon!";
+	cout << "\n\n\t==========================================\n";
+}
+/*
+	FUNCTION TO CREATE A DATABASE
+*/
+
+int product::create_database()
+{
+	system("color 0a");
+	v = sqlite3_open("STOCK.db", &db); // routine to open the database
+	if (v != SQLITE_OK) // SQLITE_OK  is a result code that expounds to zero when successful, when the result is successful
+	{
+		cerr << "Error opening database" << endl;
+		sqlite3_free(messaggeError);
+	}
+	else
+	{
+		cout << "opened database successfully!" << endl;
+	}
+	sqlite3_close(db); // routine to close the database
+	return 0;
+}
+/*
+	FUNCTION TO CREATE TABLE 1
+*/
+
+int product::create_table1()
+{
+	v = sqlite3_open("STOCK.db", &db); // routine to open a connection to a sqlite database file
+
+	string sql = "CREATE TABLE PRODUCTS("
+		" PRODNO   INT PRIMARY KEY NOT NULL,"
+		"PRODNAME TEXT    NOT NULL,"
+		"QUANTITY INT NOT NULL,"
+		"PRICE    REAL    NOT NULL,"
+		"DISCOUNT INT NOT NULL);";
+
+	v = sqlite3_exec(db, sql.c_str(), NULL, 0, &messaggeError); //executes the sql routine to create table products //the  5th parameter enables us to check for errors in creating the table
+
+	if (v != SQLITE_OK) // SQLITE_OK  is a result code that expounds to zero when successful, when the result is successful
+	{
+		cerr << "Table 1 failed to be created" << endl;
+		sqlite3_free(messaggeError);
+	}
+	else
+	{
+		cout << "Table 1 created successfully" << endl;
+	}
+
+	sqlite3_close(db); // routine to close a connection to a sqlite database file
+	return 0;
+}
+/*
+	FUNCTION TO ENABLE USER INPUT FOR INSERTING INTO TABLE
+*/
+
+int product::data1() //function to accept administrator input 
+{
+	cout << "\nEnter the product number: ";
+	cin >> prodno;
+
+	cout << "\nEnter the product name: ";
+	cin >> prodname;
+	cout << "\nEnter the product quantity: ";
+	cin >> quantity;
+
+	cout << "\nEnter the product price: ";
+	cin >> price;
+
+	cout << "\nEnter the product discount: ";
+	cin >> discount;
+	return 0;
+}
+/*
+	FUNCTION TO INSERT  INTO TABLE 1 (PRODUCTS)
+*/
+
+int product::insert_into_table1() // function to insert user input into the table products
+{
+	system("cls");
+	system("color 0b");
+	int times;
+	cout << "Enter the number of items to insert: "; //allows admin to insert multiple products into the table products
+	cin >> times;
+	for (int i = 0; i < times; i++)
+	{
+		data1();
+		v = sqlite3_open("STOCK.db", &db); // routine to open a connection to a sqlite database file
+		string query = "SELECT * FROM PRODUCTS;"; // routine to select all columns and their values from the table products // the * reprents all column names
+
+		cout << "STATE OF TABLE BEFORE INSERT" << endl;
+
+		sqlite3_exec(db, query.c_str(), callback, NULL, NULL); // executes the query by selecting all values in the table and displaying them
+
+		// inserts user input into the table
+		string sql = "INSERT INTO PRODUCTS VALUES('" + to_string(prodno) + "','" + prodname + "','" + to_string(quantity) + "' , '" + to_string(price) + "' ,'" + to_string(discount) + "' );";
+
+		v = sqlite3_exec(db, sql.c_str(), NULL, 0, &messaggeError); // executes the insertion
+
+		if (v != SQLITE_OK) // SQLITE_OK  is a result code that expounds to zero when successful, when the result is successful
+		{
+			cerr << "Error in inserting Records" << endl;
+			sqlite3_free(messaggeError);
+		}
+		else
+		{
+			cout << "Records created successfully" << endl;
+		}
+		cout << "STATE OF TABLE AFTER INSERT" << endl;
+
+		sqlite3_exec(db, query.c_str(), callback, NULL, NULL); // executes the query by selecting all values in the table and displaying them
+	}
+
+	sqlite3_close(db); // routine to close a connection to a sqlite database file
+
+	return 0;
+}
+/*
+	FUNCTION TO ENABLEE THE ADMINSTRATOR TO DELETE FROM TABLE 1(PRODUCTS)
+*/
+
+int product::delete_from_table1()
+{
+	system("cls");
+	system("color 0c");
+	v = sqlite3_open("STOCK.db", &db); // routine to open a connection to a sqlite database file
+	string query = "SELECT * FROM PRODUCTS;"; // routine to select all columns and their values from the table products // the * reprents all column names
+
+	cout << "STATE OF TABLE BEFORE DELETION" << endl;
+
+	sqlite3_exec(db, query.c_str(), callback, NULL, NULL);// executes the query by selecting all values in the table and displaying them
+	cout << "Enter product number to be deleted: ";
+	cin >> prodno;
+
+	string sql = "DELETE FROM PRODUCTS WHERE PRODNO='" + to_string(prodno) + "';"; //routine that deletes a complete row from the table products where there is a specified product number
+
+
+	v = sqlite3_exec(db, sql.c_str(), NULL, 0, &messaggeError);
+
+	if (v != SQLITE_OK) // SQLITE_OK  is a result code that expounds to zero when successful, when the result is successful
+	{
+		cerr << "Error in deleting Records" << endl;
+		sqlite3_free(messaggeError);
+	}
+	else
+	{
+		cout << "Records deleted successfully" << endl;
+	}
+	cout << "STATE OF TABLE AFTER DELETION" << endl;
+	sqlite3_exec(db, query.c_str(), callback, NULL, NULL); // executes the query by selecting all values in the table and displaying them
+
+	sqlite3_close(db); // routine to close a connection to a sqlite database file
+	footer();
+	return 0;
+}
+/*
+	FUNCTION TO ENABLE ADMINSTRATOR TO TO MODIFY AND UPDATE TABLE 1(OPERATIONS)
+*/
+
+int product::modify_update_table()
+{
+	system("cls");
+	system("color 0d");
+	v = sqlite3_open("STOCK.db", &db); // routine to open a connection to a sqlite database file
+	string query = "SELECT * FROM PRODUCTS;";
+
+	cout << "STATE OF TABLE BEFORE MODIFICATION" << endl;
+
+	sqlite3_exec(db, query.c_str(), callback, NULL, NULL); // executes the query by selecting all values in the table and displaying them
+	cout << "Enter product number of recored to be updated: ";
+	cin >> prodno;
+
+	int choice;
+	string sql;
+	cout << " Choose 1. To update prodname into the table\n Choose 2. To update quantity in the table\n Choose 3. To update discount in the table\n Choose 4. To update price of product\n" << endl;
+	cin >> choice;
+	switch (choice)
+	{
+	case 1:
+		{
+		cout << "Enter updated product name: ";
+		cin >> prodname;
+		sql = "UPDATE PRODUCTS SET PRODNAME = '" + prodname + "'WHERE PRODNO ='" + to_string(prodno) + "';"; //updates product number
+		Sleep(3000);
+		break;
+		}
+	case 2:
+		{
+		cout << "Enter updated product quantity: ";
+		cin >> quantity;
+		sql = "UPDATE PRODUCTS SET QUANTITY = '" + to_string(quantity) + "'WHERE PRODNO ='" + to_string(prodno) + "';"; //updates quantity
+		Sleep(3000);
+		break;
+		}
+	case 3:
+		{
+		cout << "Enter updated product discount: ";
+		cin >> discount;
+		sql = "UPDATE PRODUCTS SET DISCOUNT ='" + to_string(discount) + "'WHERE PRODNO ='" + to_string(prodno) + "';";//updates discount
+		Sleep(3000);
+		break;
+		}
+	case 4:
+		{
+		cout << "Enter updated product price: ";
+		cin >> price;
+		sql = "UPDATE PRODUCTS SET DISCOUNT ='" + to_string(price) + "'WHERE PRODNO ='" + to_string(prodno) + "';"; // updates price
+		Sleep(3000);
+		break;
+		}
+	}
+	v = sqlite3_exec(db, sql.c_str(), NULL, 0, &messaggeError); // executes the update
+
+	if (v != SQLITE_OK) // SQLITE_OK  is a result code that expounds to zero when successful, when the result is successful
+	{
+		cerr << "Error in modifying Records" << endl;
+		sqlite3_free(messaggeError);
+	}
+	else
+	{
+		cout << "Records modified successfully" << endl;
+	}
+	cout << "STATE OF TABLE AFTER MODIFICATION" << endl;
+
+	sqlite3_exec(db, query.c_str(), callback, NULL, NULL); // executes the query by selecting all values in the table and displaying them
+
+	sqlite3_close(db); // routine to close a connection to a sqlite database file
+
+	footer();
+
+	return 0;
+}
+/*
+	FUNCTION TO CREATE TABLE 2 (OPERATIONS)
+*/
+
+int product::create_table2()
+{
+	v = sqlite3_open("STOCK.db", &db); // routine to open a connection to a sqlite database file
+	string sql2 = "CREATE TABLE OPERATIONS("
+		"PRICE REAL NOT NULL,"
+		"PRODNO INT NOT NULL,"
+		"BOUGHT_QUANTITY INT NOT NULL,"
+		"DISCOUNT INT NOT NULL,"
+		"DISCOUNTED_PRICE REAL,"
+		"TOTAL_PRICE REAL );";
+
+	v = sqlite3_exec(db, sql2.c_str(), NULL, 0, &messaggeError);
+
+	if (v != SQLITE_OK) // SQLITE_OK  is a result code that expounds to zero when successful, when the result is successful
+	{
+		cerr << "Table 2 failed to be created" << endl;
+		sqlite3_free(messaggeError);
+	}
+	else
+	{
+		cout << "Table 2 created successfully" << endl;
+	}
+
+	sqlite3_close(db); // routine to open a connection to a sqlite database file
+
+	return 0;
+}
+/*
+	FUNCTION TO DELETE ALL THE VALUES FROM TABLE 2 (OPERATIONS)
+*/
+
+int product::delete_table2()
+{
+	v = sqlite3_open("STOCK.db", &db); // routine to open a connection to a sqlite database file
+
+	string sql2 = "DELETE FROM OPERATIONS;"; // deletes all the values in the table operations
+	v = sqlite3_exec(db, sql2.c_str(), NULL, 0, &messaggeError);
+
+	if (v != SQLITE_OK) // SQLITE_OK  is a result code that expounds to zero when successful, when the result is successful
+	{
+		cerr << "Error in deleting Records" << endl;
+		sqlite3_free(messaggeError);
+	}
+	else
+	{
+		cout << "Records deleted successfully" << endl;
+	}
+	sqlite3_close(db); // routine to open a connection to a sqlite database file
+
+	return 0;
+}
+
+/*
+	FUNCTION TO ENABLE TO INSERT  INTO TABLE2 AND CALCULATE TOTAL PRICE
+*/
+
+int product::insert_into_table2()
+{
+	cout << "Enter product number of product being bought: ";
+	cin >> prodno;
+	cout << "Enter the product price: ";
+	cin >> price;
+	cout << "Enter quantity of product the customer would like to buy: ";
+	cin >> bought_quantity;
+	cout << "Enter discount of product: ";
+	cin >> discount;
+
+	discounted_price = price * (discount / 100);
+	total_price = (price - discounted_price) * bought_quantity;
+	total = total + total_price;
+
+	v = sqlite3_open("STOCK.db", &db); // routine to open a connection to a sqlite database file
+	string query = "SELECT * FROM OPERATIONS;";
+
+	string sql2 = "INSERT INTO OPERATIONS VALUES('" + to_string(price) + "','" + to_string(prodno) + "','" + to_string(bought_quantity) + "','" + to_string(discount) + "','" + to_string(discounted_price) + "','" + to_string(total_price) + "');";
+	v = sqlite3_exec(db, sql2.c_str(), NULL, 0, &messaggeError);
+
+	if (v != SQLITE_OK) // SQLITE_OK  is a result code that expounds to zero when successful, when the result is successful
+	{
+		cerr << "Error in inserting Records" << endl;
+		sqlite3_free(messaggeError);
+	}
+	else
+	{
+		cout << "Records created successfully" << endl;
+	}
+
+	sqlite3_close(db); // routine to close a connection to a sqlite database file
+
+	return 0;
+}
+
+/*
+	FUNCTION TO MODIFY AND UPDATE QUANTITY OF PRODUCTS AFTER THEY ARE BOUGHT
+*/
+
+int product::modify_quantity()
+{
+	v = sqlite3_open("STOCK.db", &db); // routine to open a connection to a sqlite database file
+	string query = "SELECT  QUANTITY FROM PRODUCTS WHERE PRODNO = '" + to_string(prodno) + "';";
+	sqlite3_exec(db, query.c_str(), callback, NULL, NULL);
+
+	cout << "Quantity as seen from stock ";
+	cin >> quantity;
+	new_quantity = quantity - bought_quantity;
+	string sql = "UPDATE PRODUCTS SET QUANTITY = '" + to_string(new_quantity) + "'WHERE PRODNO ='" + to_string(prodno) + "';";
+	v = sqlite3_exec(db, sql.c_str(), NULL, 0, &messaggeError);
+	if (v != SQLITE_OK) // SQLITE_OK  is a result code that expounds to zero when successful, when the result is successful
+	{
+		cerr << "Error in updating Records" << endl;
+		sqlite3_free(messaggeError);
+	}
+	else
+	{
+		cout << "Records updated successfully" << endl;
+	}
+	sqlite3_close(db); // routine to close a connection to a sqlite database file
+	return 0;
+}
+
+/*
+	FUNCTION TO ENABLE A CASHIER TO PLACE AN ORDER
+*/
+
+int product::place_order()
+{
+	title_header();
+
+	v = sqlite3_open("STOCK.db", &db); // routine to open a connection to a sqlite database file
+	cout << "STATE OF TABLE " << endl;
+	string query = "SELECT * FROM PRODUCTS;";
+	sqlite3_exec(db, query.c_str(), callback, NULL, NULL);
+
+	cout << "\n============================";
+	cout << "\n    PLACE YOUR ORDER";
+	cout << "\n============================\n";
+
+	do
+	{
+		insert_into_table2();
+		modify_quantity();
+		cout << "Do you want to enter another product? (enter y/n) ";
+		cin >> choice;
+	} while (choice == 'Y' || choice == 'y');
+
+	cout << "\n\nThank You For Placing The Order";
+	cout << "\n\n\t\t\t\t\tTOTAL = " << total << endl;
+
+	delete_table2();
+	sqlite3_close(db); // routine to close a connection to a sqlite database file
+
+	footer();
+
+	return 0;
+
+}
+/*
+	INTRO DISPLAY
+*/
+
+void product::intro()
+{
+	system("color 0d");
+
+	cout << "\n\n\t==========================================\n";
+	cout << "\n\n\tSUPERMARKET STOCK & BILLING SYSTEM";
+	cout << "\n\n\t==========================================\n";
+	cout << "\n\n\tA PROJECT MADE BY : \n\t Group one- With Love
+	cout << "\n\n\t==========================================\n";
+	cout << "\n\n\tKENYATTA UNIVERSITY";
+	cout << "\n\tELECTRICAL AND ENGINEERING DEPARTMENT";
+	cout << "\n\n\t==========================================\n";
+
+	Sleep(3000);
+}
+/*
+	FUNCTION DISPLAYING THE ADMINISTRATOR MENU
+*/
+
+int product::admin_menu_stocks()
+{
+	system("cls");
+	system("color 0e");
+
+	int choice;
+	create_database();
+	create_table1();
+	create_table2();
+	title_header();
+	cout << "\n\n\n\tADMIN MENU";
+	cout << "\n\nChoose 1. To insert values into the table";
+	cout << "\n\nChoose 2. To delete values from the table";
+	cout << "\n\nChoose 3. To update records in the table" ;
+	cout << "\n\nChoose 4. To Exit";
+	cout << "\n\n\tPlease Enter Your Choice (1-4): ";
+	cin >> choice;
+	switch (choice)
+	{
+	case 1: insert_into_table1();
+		Sleep(3000);
+		admin_menu_stocks();
+		break;
+	case 2: delete_from_table1();
+		Sleep(3000);
+		admin_menu_stocks();
+		break;
+	case 3: modify_update_table();
+		Sleep(3000);
+		admin_menu_stocks();
+	case 4: exit(0);
+
+		break;
+	}
+
+	footer();
+
+	return 0;
+}
+
+/*
+	OBJECT DECLARATION OF CLASS PRODUCT
+*/
+
+product pprod;
+
+// CLASS PERSON STARTS HERE
+
+class person//create a class
+{
+
+	/*
+	PRIVATE CLASS MEMBER VARIABLES
+	*/
+
+	int idnum;//the idnumber
+	int password;//loyalty points awarded
+
+public:
+
+	/*
+	FUNCTION TO SET DATA INPUT
+	*/
+
+	void setdata()
+	{
+		cout << "Enter cashier ID number" << endl;
+		cin >> idnum;
+		cout << "Enter the cashier Password " << endl;
+		cin >> password;
+	}
+
+	/*
+	FUNCTION TO DISPLAY DATA
+	*/
+
+	void display()
+	{
+		cout << "Cashier ID" << idnum;
+		cout << "Cashier Password" << password;
+	}
+
+	/*
+	FUNCTION TO RETURN IDNUM
+	*/
+
+	int getid()
+	{
+		return idnum;
+	}
+
+	/*
+	FUNCTION TO ENTER AND WRITE TO FILE CASHIER DETAILS OF ACCOUNT
+	*/
+
+	void input_cashier()
+	{
+		fstream file;
+		person sobj;
+		map<int, person>::iterator itr;
+		file.open("cashier.dat", ios::out | ios::binary);
+		for (itr = mydata.begin(); itr != mydata.end(); itr++)
+		{
+			sobj = (*itr).second;//int cosidered first then object is stored as second
+			file.write((char*)&sobj, sizeof(sobj));//writes the object into the file
+
+		}
+		file.close();
+	}
+
+	/*
+	FUNCTION TO DISPLAY ALL CASHIER ACCOUNTS DETAILS
+	*/
+
+	void output_cashier()
+	{
+		int tobj = 0;
+		person sobj;
+		int i = 0;
+		fstream file;
+		file.open("cashier.dat", ios::in | ios::binary);
+		if (file.fail())//not having any file
+		{
+			return;
+		}
+		else
+		{
+			for (i = 0; i < tobj; i++)//reads each object from the file and stores them in a container
+			{
+				file.read((char*)&sobj, sizeof(sobj));
+				mydata[sobj.getid()] = sobj;//the getID/roll number is stored as the key and the object is stored as the associate
+			}
+		}
+		file.close();
+	}
+
+	/*
+	FUNCTION TO CREATE A CASHIERS ACCOUNT DATA
+	*/
+
+	void createperson()
+	{
+		person sobj;
+		sobj.setdata();
+		mydata[sobj.getid()] = sobj;//get the  ID and store it as the key
+		cout << "REGISTRATION SUCCESSFUL!!!" << endl;
+
+	}
+
+	void displayallperson()
+	{
+		map<int, person>::iterator itr;
+		for (itr = mydata.begin(); itr != mydata.end(); itr++)
+		{
+			(*itr).second.display();
+		}
+	}
+
+	/*
+	FUNCTION TO LOG IN CASHIER AND WHEN SUCCESSFUL GOES TO PLACE AN ORDER
+	*/
+
+	void login_cashier()
+	{
+		system("cls");
+		int id;//the ID you want to search for in order to login
+		cout << "Reenter cashier ID" << endl;
+		cin >> id;
+
+		map<int, person>::iterator itr;
+		for (itr = mydata.begin(); itr != mydata.end(); itr++)
+		{
+			if (id == (*itr).second.getid())
+			{
+				cout << "LOGIN SUCCESSFUL!!" << endl;
+				(*itr).second.display();
+				Sleep(3000); // sleeps for 3 seconds
+				pprod.place_order();
+			}
+			else
+			{
+				cout << "PASSWORD INCOMPATIBLE" << endl;
+				exit(0);
+			}
+		}
+	}
+
+	/*
+	FUNCTION TO DELETE CASHIER ACCOUNT DATA
+	*/
+
+	void deletepersonid()
+	{
+		int id;
+		person sobj;
+		int tid;
+		cout << "Renter the cashier ID" << endl;
+		cin >> id;
+		map<int, person>::iterator itr;
+		for (itr = mydata.begin(); itr != mydata.end(); itr++)
+		{
+			if (id == (*itr).second.getid())
+			{
+				sobj = (*itr).second;//getting the object
+				tid = sobj.getid();//simply gettng the ID and display
+				sobj.display();//the particular object to delete
+				mydata.erase(tid);//pass the key then delete the entire map
+
+			}
+			else
+			{
+				cout << "PASSWORD INCOMPATIBLE" << endl;
+				exit(0);
+			}
+		}
+	}
+
+	/*
+	FUNCTION TO UPDATE THE ACCOUNT DETAILS OF A CASHIER
+	*/
+
+	void updateidperson()
+	{
+		int id;
+		person sobj;
+		cout << "Renter the cashier id" << endl;
+		cin >> id;
+		map<int, person>::iterator itr;
+		for (itr = mydata.begin(); itr != mydata.end(); itr++)
+		{
+			if (id == (*itr).second.getid())
+			{
+				cout << "LOGIN SUCCESSFUL" << endl;
+				(*itr).second.display();
+				cout << "\nEnter new cashier data" << endl;
+				sobj.setdata();
+				(*itr).second = sobj;//stores in the second posit of the iterator
+			}
+			else
+			{
+				cout << "PASSWORD CASHIER INCOMPATIBLE" << endl;
+			}
+		}
+	}
+
+	/*
+		FUNCTION THAT DISPLAYS ADMINISTRATOR MENU HANDLING CAHIER ACCOUNTS
+	*/
+
+	void adminmenu()
+	{
+		system("cls");
+		cout << "\n ========================================================" << endl;
+		cout << "1. CREATE  ACCOUNT" << endl;
+		cout << "2. DISPLAY ID" << endl;
+		cout << "3. DISPLAY INFORMATION" << endl;
+		cout << "4. UPDATE INFORMATION" << endl;
+		cout << "5. DELETE A FROM RECORDS" << endl;
+		cout << "0. Exit" << endl;
+		int choice;
+		cout << "Enter your choice" << endl;
+		cin >> choice;
+		switch (choice)
+		{
+		case 1:
+			createperson();
+
+			break;
+		case 2:
+			displayallperson();
+
+			break;
+		case 3:
+			updateidperson();
+
+			break;
+		case 4:
+			deletepersonid();
+
+			break;
+		}
+	}
+};
+// CLASS PERSON ENDS HERE
+
+/*
+OBJECT DECLARATION OF CLASS PERSON
+*/
+person sobj;
+
+/*
+FUNCTION TO LOGIN THE ADMINISTRATOR
+*/
+void adminlogin()
+{
+	system("cls");
+	int logattempt = 0;
+	while (logattempt < 3)
+	{
+		cout << "Enter admin user and password" << endl;
+		cin >> pass1 >> mainadm1;
+
+		if ((pass1 != pass) && (mainadm1 != mainadm))
+		{
+			cout << "Access denied !!!!!!!!!!!!!" << endl;
+			logattempt++;
+		}
+		else if(logattempt == 2)
+		{
+			cout << "Max entries consult with your admnistator" << endl;
+			exit(0);
+		}
+		else
+		{
+			break;
+		}
+	}
+	cout << "ACCESS GRANTED!!!!!!!!" << endl;
+	Sleep(3000);	
+}
+/*
+FUNCTION TO LOG IN AS A CASHIER OR AN ADMINISTRATOR
+*/
+void choices()
+{
+	system("cls");
+	int choice2;
+
+	cout << "1. LOG IN AS CASHIER" << endl;
+	cout << "2. LOG IN AS ADMINISTRATOR" << endl;
+
+	cout << "Enter your choice: ";
+	cin >> choice2;
+
+	switch (choice2)
+	{
+
+	case 1: sobj.login_cashier(); // after log in is successful proceeds to function that places an order // else loops back to log in as cashier or administrator
+			Sleep(3000);// sleeps for 3 seconds
+			choices();
+			break;
+
+	case 2:
+		int choice3;
+
+		cout << "1. DEAL WITH STOCK" << endl;
+		cout << "2. DEAL WITH LOGIN ACCOUNTS" << endl;
+		cout << "3. Exit" << endl;
+
+		cout << "Enter your choice: ";
+		cin >> choice3;
+		switch (choice3)
+		{
+		case 1:		pprod.admin_menu_stocks();
+					Sleep(3000);// sleeps for 3 seconds
+					choices();
+			break;
+		case 2:		sobj.adminmenu();
+					Sleep(3000);// sleeps for 3 seconds
+					choices();
+			break;
+		case 3:
+			exit(0);
+		}
+	case 3: exit(0);
+
+	}
+}
+
+int main()
+{
+	pprod.intro();
+	pprod.title_header();
+	system("color 0b");
+	int x = 0;
+	adminlogin();
+	choices();
+		
+		return 0;
+
+}
